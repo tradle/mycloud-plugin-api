@@ -1,0 +1,21 @@
+{
+  "name": "@tradle/mycloud-plugin-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "API for plugins dynamically loaded by mycloud - https://github.com/tradle/mycloud",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Martin Heidegger <martin.heidegger@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tradle/mycloud-plugin-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tradle/mycloud-plugin-api/issues"
+  },
+  "homepage": "https://github.com/tradle/mycloud-plugin-api#readme"
+}
