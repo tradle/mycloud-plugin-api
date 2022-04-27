@@ -1,6 +1,6 @@
 {
   "name": "@tradle/mycloud-plugin-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "description": "API for plugins dynamically loaded by mycloud - https://github.com/tradle/mycloud",
   "types": "index.d.ts",
