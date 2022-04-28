@@ -15,13 +15,16 @@ export interface ITradleObject extends Stub {
   rawData?: any
   hits?: any
   status?: string
+  [prop: string]: any
 }
 export interface Prop {
   ref: string
+  type: string
   readOnly: boolean
 }
 export interface ModelEnum {
   id: string
+  title: any
   integrationId: string
 }
 export interface Model {
@@ -30,6 +33,10 @@ export interface Model {
     [key: string]: Prop
   }
 }
+// TODO: this is a stub for the DB interface of @tradle/dynamodb
+export interface DB {
+  find: (opts: any) => Promise<any/* SearchResult */>
+}
 export interface Bot {
   models: {
     [name: string]: Model
@@ -37,12 +44,93 @@ export interface Bot {
   resolveEmbeds (obj: ITradleObject): Promise<void>
   draft({ type: VERIFICATION }): ITradleObject
   getResource(stub: Stub): Promise<ITradleObject>
+  db: DB
+  buckets
 }
 export interface Logger {
   debug(...args): void
   error(...args): void
 }
-export interface CreatePlugin <T> {}
+export interface IBotComponents {
+  bot: Bot
+  logger: Logger
+  utils: Utils
+  productsAPI: any
+  employeeManager: any
+  applications: Applications
+  // TODO: Fill in the other parts
+  friends: any // Friends
+  alerts: any // Alerts
+  conf?: IConfComponents
+  remediation?: any // Remediation
+  onfido?: any // Onfido
+  deployment?: any // Deployment
+  commands?: any // Commander
+  emailBasedVerifier?: any // EmailBasedVerifier
+  smsBasedVerifier?: any // SMSBasedVerifier
+  documentChecker?: any // DocumentCheckerAPI
+  tradleServicesStack?: any // TradleServicesStack
+  [x: string]: any
+}
+export interface IPluginOpts {
+  logger: Logger
+  conf?: any
+}
+declare namespace PluginLifecycle {
+  // synchronous, attach conditioned on handleMessages
+  export type onmessage = (req:IPBReq) => boolean|void | Promise<boolean|void>
+  export type willSend = (opts: any /* TODO: IWillSendArg */) => void | Promise<void>
+  export type willRequestForm = (opts: any /* TODO: IWillRequestFormArg */) => void | Promise<void>
+  export type willApproveApplication = (opts: any /* TODO: IWillJudgeAppArg */) => void | Promise<void>
+  export type didApproveApplication = (opts: any /* TODO: IWillJudgeAppArg */, signedObject: ITradleObject) => void | Promise<void>
+  export type willIssueCertificate = (opts: any /* TODO: WillIssueCertificateArg */) => void | Promise<void>
+  export type willDenyApplication = (opts: any /* TODO: IWillJudgeAppArg */) => void | Promise<void>
+  export type onFormsCollected = (opts: any /* TODO: IOnFormsCollectedArg */) => void | Promise<void>
+  export type onPendingApplicationCollision = (opts: any /* TODO: IOnPendingApplicationCollisionArg */) => void | Promise<void>
+  export type onRequestForExistingProduct = (req:IPBReq) => void | Promise<void>
+  export type onCommand = ({ req: IPBReq, command: string }) => void | Promise<void>
+  export type getRequiredForms = (opts:  any /* TODO: IGetRequiredFormsArg */) => Promise<void|string[]>
+  export type validateForm = (opts:  any /* TODO: IValidateFormArg */) => Promise<void| any /* TODO: IValidateFormOutput */>
+
+  export type replay = (obj: ITradleObject, applications: Applications) => Promise<void>
+
+  // asynchronous, attach conditioned on runAsyncHandlers
+  export type onCheckStatusChanged = (check:  any /* TODO: ITradleCheck */) => Promise<void>
+  export type onResourceChanged = (opts:  any /* TODO: OnResourceChangedArg */) => Promise<void>
+  export type onResourceCreated = (obj: ITradleObject) => Promise<void>
+  export type onResourceDeleted = (obj: ITradleObject) => Promise<void>
+
+  export interface Methods {
+    onmessage?: onmessage
+    willSend?: willSend
+    willRequestForm?: willRequestForm
+    willApproveApplication?: willApproveApplication
+    willIssueCertificate?: willIssueCertificate
+    didApproveApplication?: didApproveApplication
+    willDenyApplication?: willDenyApplication
+    onFormsCollected?: onFormsCollected
+    onPendingApplicationCollision?: onPendingApplicationCollision
+    onRequestForExistingProduct?: onRequestForExistingProduct
+    onCommand?: onCommand
+    getRequiredForms?: getRequiredForms
+    validateForm?: validateForm
+    replay?: replay
+
+    onCheckStatusChanged?: onCheckStatusChanged
+    onResourceChanged?: onResourceChanged
+    onResourceCreated?: onResourceCreated
+    onResourceDeleted?: onResourceDeleted
+    [toBeDefined: string]: any
+  }
+}
+export interface IPluginExports<BotComponent> {
+  plugin: PluginLifecycle.Methods
+  api?: BotComponent
+  [customExport: string]: any
+}
+export interface CreatePlugin <BotComponent> {
+  (components: IBotComponents, opts: IPluginOpts): IPluginExports<BotComponent>
+}
 export interface Applications {
   createCheck(checkR: ITradleObject, req: IPBReq): Promise<ITradleObject>
   createVerification(opts: { application: IPBApp, verification, org }): Promise<void>
@@ -52,6 +140,7 @@ export interface Applications {
     form: ITradleObject
     req: IPBReq
   }): Promise<void>
+  requestEdit(object: any): Promise<void>
 }
 export interface Submission {
   submission: string
@@ -89,8 +178,33 @@ export interface ITradleObject {
   set(obj: {}): this
   toJSON(): any
 }
-export interface IConfComponents {}
-export interface ValidatePluginConf {}
+export interface IOrganization extends ITradleObject {
+  name: string
+  domain: string
+}
+export interface IConfComponents {
+  // TODO: bot: IBotConf
+  org: IOrganization
+  // TODO: modelsPack?: ModelsPack
+  style?: any
+  // TODO: termsAndConditions?: DatedValue
+  // TODO: kycServiceDiscovery?: KYCServiceDiscovery
+
+  // TODO: plugins?: PluginDefinitions
+}
+export type ValidatePluginConfOpts = {
+  bot: Bot
+  conf: IConfComponents
+  pluginConf: any
+  utils: Utils
+  [other:string]: any
+}
+
+export type UpdatePluginConfOpts = ValidatePluginConfOpts
+
+export type ValidatePluginConf = (opts:ValidatePluginConfOpts) => Promise<void>
+export type UpdatePluginConf = (opts:UpdatePluginConfOpts) => Promise<void>
+
 export namespace Errors {
   class InvalidInput extends Error {
     constructor (message: string)
@@ -104,15 +218,14 @@ export interface Check {
 export interface CheckNeedsToBeCreated {
   notMatched: {}
 }
-export namespace utils {
-  function getStatusMessageForCheck(opts: { models: { [name: string]: Model }, check: Check }): string
-  function ensureThirdPartyServiceConfigured(conf: any, name: string): void
-  function getThirdPartyServiceInfo(conf: any, name: string): {}
-  function post(url: string, data: any, opts: any): Promise<Res>
-
-  function getLatestForms (app: IPBApp): Stub[]
-  function getParsedFormStubs(app: IPBApp): Stub[]
-  function doesCheckNeedToBeCreated (opts: {
+export interface Utils {
+  getStatusMessageForCheck: (opts: { models: { [name: string]: Model }, check: Check }) => string
+  ensureThirdPartyServiceConfigured: (conf: any, name: string) => void
+  getThirdPartyServiceInfo: (conf: any, name: string) => {}
+  post: (url: string, data: any, opts: any) => Promise<Res>
+  getLatestForms:  (app: IPBApp) => Stub[]
+  getParsedFormStubs: (app: IPBApp) => Stub[]
+  doesCheckNeedToBeCreated:  (opts: {
     bot: Bot
     type: string
     application: IPBApp
@@ -121,35 +234,35 @@ export namespace utils {
     propertiesToCheck: string[]
     prop: string
     req: IPBReq
-  }): Promise<null | CheckNeedsToBeCreated>
-  function getChecks (opts: {
+  }) => Promise<null | CheckNeedsToBeCreated>
+  getChecks: (opts: {
     bot: Bot
     type: string
     application: IPBApp
     provider: string
-  }): Promise<Check[]>
-  function hasPropertiesChanged (opts: {
+  }) => Promise<Check[]>
+  hasPropertiesChanged: (opts: {
     resource: ITradleObject
     bot: Bot
     propertiesToCheck: string[]
     req: IPBReq
-  }): Promise<boolean>
+  }) => Promise<boolean>
 
-  function getLatestCheck (opts: {
+  getLatestCheck: (opts: {
     type: string
     req: IPBReq
     application: IPBApp
     bot: Bot
-  }): Promise<any>
-  function isSubClassOf (type, value, obj): boolean
-  function isPassedCheck (check: any): boolean
-  function getCheckParameters (opts: {
+  }) => Promise<any>
+  isSubClassOf: (type, value, obj) => boolean
+  isPassedCheck: (check: any) => boolean
+  getCheckParameters: (opts: {
     plugin: string
     resource: ITradleObject
     bot: Bot
     defaultPropMap: any
     map: any
-  }): Promise<{
+  }) => Promise<{
     resource: ITradleObject
     error?: Error
   }>
