@@ -197,6 +197,7 @@ export type ValidatePluginConfOpts = {
   conf: IConfComponents
   pluginConf: any
   utils: Utils
+  errors: Errors
   [other:string]: any
 }
 
@@ -205,11 +206,16 @@ export type UpdatePluginConfOpts = ValidatePluginConfOpts
 export type ValidatePluginConf = (opts:ValidatePluginConfOpts) => Promise<void>
 export type UpdatePluginConf = (opts:UpdatePluginConfOpts) => Promise<void>
 
-export namespace Errors {
+export namespace errors {
   class InvalidInput extends Error {
     constructor (message: string)
   }
 }
+
+export interface Errors {
+  InvalidInput: typeof errors.InvalidInput
+}
+
 export interface Res {
 }
 export interface Check {
