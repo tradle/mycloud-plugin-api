@@ -281,6 +281,14 @@ export interface Utils {
     resource: ITradleObject
     error?: Error
   }>
+  sanitize(input: any): {
+    sanitized: any
+    removed: Array<{
+      key: string
+      value: any
+      path: string
+    }>
+  }
 }
 
 export type IDynamoDBKey = {
