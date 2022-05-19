@@ -51,10 +51,19 @@ export interface Logger {
   debug(...args): void
   error(...args): void
 }
+export interface IBuildResource {
+  title(opts: {
+    models: {
+      [name: string]: Model
+    },
+    resource: ITradleObject
+  }): string
+}
 export interface IBotComponents {
   bot: Bot
   logger: Logger
   utils: Utils
+  buildResource: IBuildResource
   productsAPI: any
   employeeManager: any
   applications: Applications
